@@ -1,208 +1,126 @@
-name: CI/CD Pipeline Research
+name: CI/CD Research Pipeline
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
 
 jobs:
+  # 1. Базовый пайплайн без кэширования
   basic-pipeline:
     name: "1. Basic Pipeline (No Cache)"
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        
-    - name: Set up Node.js 18
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Install Python dependencies (No Cache)
-      working-directory: ./ВяткинСЮ/backend
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-asyncio httpx
-        
-    - name: Install Node.js dependencies (No Cache)
-      working-directory: ./ВяткинСЮ/frontend
-      run: |
-        npm ci
-        
-    - name: Run Python tests
-      working-directory: ./ВяткинСЮ/backend
-      run: |
-        python -m pytest tests/ -v
-        
-    - name: Run Node.js tests
-      working-directory: ./ВяткинСЮ/frontend
-      run: |
-        npm test -- --coverage --watchAll=false
-        
-    - name: Build Docker images (No Cache)
-      working-directory: ./ВяткинСЮ
-      run: |
-        docker build -t webapp-backend:basic ./backend
-        docker build -t webapp-frontend:basic ./frontend
-        docker build -t webapp-nginx:basic ./nginx
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (No Cache)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pylint
+        run: pylint main.py
+
+      - name: Run tests
+        run: python -m pytest test_main.py -v
+
+      - name: Basic security check
+        run: echo "No security checks in basic pipeline"
+
+  # 2. Пайплайн с кэшированием
   cached-pipeline:
     name: "2. Pipeline with Caching"
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        
-    - name: Cache Python dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-        
-    - name: Set up Node.js 18
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './ВяткинСЮ/frontend/package-lock.json'
-        
-    - name: Install Python dependencies (With Cache)
-      working-directory: ./ВяткинСЮ/backend
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-asyncio httpx
-        
-    - name: Install Node.js dependencies (With Cache)
-      working-directory: ./ВяткинСЮ/frontend
-      run: |
-        npm ci
-        
-    - name: Run Python tests
-      working-directory: ./ВяткинСЮ/backend
-      run: |
-        python -m pytest tests/ -v
-        
-    - name: Run Node.js tests
-      working-directory: ./ВяткинСЮ/frontend
-      run: |
-        npm test -- --coverage --watchAll=false
-        
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Build Backend Image (With Cache)
-      uses: docker/build-push-action@v5
-      with:
-        context: ./ВяткинСЮ/backend
-        push: false
-        tags: webapp-backend:cached
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        
-    - name: Build Frontend Image (With Cache)
-      uses: docker/build-push-action@v5
-      with:
-        context: ./ВяткинСЮ/frontend
-        push: false
-        tags: webapp-frontend:cached
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        
-    - name: Build Nginx Image (With Cache)
-      uses: docker/build-push-action@v5
-      with:
-        context: ./ВяткинСЮ/nginx
-        push: false
-        tags: webapp-nginx:cached
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  cached-with-sonar:
-    name: "3. Cache + SonarQube"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        id: pip-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies (With Cache)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pylint
+        run: pylint main.py
+
+      - name: Run tests
+        run: python -m pytest test_main.py -v
+
+      - name: Cache status
+        run: |
+          if [ "${{ steps.pip-cache.outputs.cache-hit }}" == "true" ]; then
+            echo "Cache HIT - dependencies loaded from cache"
+          else
+            echo "Cache MISS - dependencies downloaded fresh"
+          fi
+
+  # 3. Полный пайплайн: кэширование + SonarQube + безопасность
+  full-pipeline:
+    name: "3. Cache + SonarQube + Security"
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
-        
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        
-    - name: Cache Python dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-        
-    - name: Set up Node.js 18
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './ВяткинСЮ/frontend/package-lock.json'
-        
-    - name: Install Python dependencies
-      working-directory: ./ВяткинСЮ/backend
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-asyncio httpx pytest-cov
-        
-    - name: Install Node.js dependencies
-      working-directory: ./ВяткинСЮ/frontend
-      run: |
-        npm ci
-        
-    - name: Run Python tests with coverage
-      working-directory: ./ВяткинСЮ/backend
-      run: |
-        python -m pytest tests/ --cov=. --cov-report=xml --cov-report=term
-        
-    - name: Run JavaScript tests with coverage
-      working-directory: ./ВяткинСЮ/frontend
-      run: |
-        npm test -- --coverage --watchAll=false
-        
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Build Docker images (With Cache)
-      uses: docker/build-push-action@v5
-      with:
-        context: ./ВяткинСЮ/backend
-        push: false
-        tags: webapp-backend:sonar
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        projectBaseDir: ./ВяткинСЮ 
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Для SonarQube
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pylint
+        run: pylint main.py
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest test_main.py -v --cov=main --cov-report=xml --cov-report=term
+
+      - name: Security analysis with Bandit
+        run: |
+          bandit -r main.py -f json -o bandit-report.json || true
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-report
+          path: bandit-report.json
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
