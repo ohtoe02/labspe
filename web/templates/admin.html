@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Security Demo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3>Панель администратора</h3>
+            </div>
+            <div class="card-body">
+                <h5>Выполнение системных команд</h5>
+                <form method="GET">
+                    <div class="mb-3">
+                        <label for="cmd" class="form-label">Команда</label>
+                        <input type="text" class="form-control" id="cmd" name="cmd" 
+                               placeholder="Например: ls -la или dir" value="{{ request.args.get('cmd', '') }}">
+                    </div>
+                    <button type="submit" class="btn btn-danger">Выполнить</button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Назад</a>
+                </form>
+                
+                <hr>
+                <h6>Примеры команд:</h6>
+                <ul class="small">
+                    <li><code>whoami</code> - текущий пользователь</li>
+                    <li><code>pwd</code> - текущая директория</li>
+                    <li><code>ls -la</code> - список файлов (Linux/Mac)</li>
+                    <li><code>dir</code> - список файлов (Windows)</li>
+                    <li><code>ps aux</code> - список процессов (Linux/Mac)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">🚨 Критическая уязвимость</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Command Injection</strong></p>
+                <p class="small">Отсутствует проверка прав доступа и валидация входных данных. Любой авторизованный пользователь может выполнять системные команды.</p>
+                <p class="small text-muted"><strong>CWE-78:</strong> OS Command Injection</p>
+                <p class="small text-muted"><strong>CWE-732:</strong> Incorrect Permission Assignment</p>
+                
+                <hr>
+                <h6 class="small">Тест на инъекцию:</h6>
+                <p class="small"><code>ls; cat /etc/passwd</code></p>
+                <p class="small"><code>whoami && id</code></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

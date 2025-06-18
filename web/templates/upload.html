@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Загрузка файлов - Security Demo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3>Загрузка файлов</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Выберите файл</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Загрузить</button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Назад</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">⚠️ Уязвимость</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Insecure File Upload</strong></p>
+                <p class="small">Отсутствует проверка типов файлов. Можно загружать потенциально опасные файлы (.php, .jsp, .exe и т.д.)</p>
+                <p class="small text-muted"><strong>CWE-434:</strong> Unrestricted Upload of File with Dangerous Type</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

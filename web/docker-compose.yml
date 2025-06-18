@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Основное веб-приложение
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+      - "8000:8000"  # Prometheus metrics
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - security-demo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Prometheus для мониторинга
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - security-demo
+    restart: unless-stopped
+
+  # Grafana для визуализации
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - security-demo
+    restart: unless-stopped
+
+  # OWASP ZAP для сканирования безопасности
+  zap:
+    image: owasp/zap2docker-stable
+    command: zap-baseline.py -t http://web:5000 -J zap-report.json
+    volumes:
+      - ./security-reports:/zap/wrk
+    networks:
+      - security-demo
+    depends_on:
+      web:
+        condition: service_healthy
+    profiles:
+      - security-scan
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  security-demo:
+    driver: bridge 

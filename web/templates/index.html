@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Security Demo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>Добро пожаловать в Security Demo App</h1>
+        <p class="lead">Это приложение демонстрирует различные аспекты безопасности веб-приложений.</p>
+        
+        {% if user %}
+            <div class="alert alert-success">
+                <h4>Добро пожаловать, {{ user }}!</h4>
+                <p>Вы можете:</p>
+                <ul>
+                    <li><a href="{{ url_for('dashboard') }}">Перейти в Dashboard</a></li>
+                    <li><a href="{{ url_for('upload_file') }}">Загрузить файлы</a></li>
+                    <li><a href="{{ url_for('admin') }}">Администрирование</a></li>
+                </ul>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <h4>Необходима авторизация</h4>
+                <p><a href="{{ url_for('login') }}" class="btn btn-primary">Войти</a> или <a href="{{ url_for('register') }}" class="btn btn-secondary">Зарегистрироваться</a></p>
+                <small class="text-muted">Для тестирования: admin / admin123</small>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Мониторинг</h5>
+            </div>
+            <div class="card-body">
+                <p><a href="/health" class="btn btn-sm btn-success">Health Check</a></p>
+                <p><a href="/stress" class="btn btn-sm btn-warning">Stress Test</a></p>
+                <p><a href="/metrics" class="btn btn-sm btn-info">Prometheus Metrics</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h3>Особенности безопасности</h3>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title text-danger">🔴 Уязвимости</h5>
+                        <ul class="small">
+                            <li>SQL инъекции</li>
+                            <li>Слабое хеширование паролей</li>
+                            <li>Выполнение команд</li>
+                            <li>Небезопасная загрузка файлов</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning">🟡 Инструменты</h5>
+                        <ul class="small">
+                            <li>Bandit - статический анализ</li>
+                            <li>Safety - проверка зависимостей</li>
+                            <li>OWASP ZAP - сканирование</li>
+                            <li>GitHub Security</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">🟢 Мониторинг</h5>
+                        <ul class="small">
+                            <li>Prometheus метрики</li>
+                            <li>Логирование попыток входа</li>
+                            <li>Health checks</li>
+                            <li>Performance monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

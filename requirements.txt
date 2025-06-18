@@ -1,9 +1,0 @@
-pylint
-bandit
-pandas
-requests
-SQLAlchemy
-Django
-tensorflow
-pytest
-pytest-cov

@@ -1,0 +1,52 @@
+# Конфигурация GitLeaks для обнаружения секретов в коде
+
+title = "Security Demo GitLeaks Config"
+
+[extend]
+# Использовать базовые правила
+useDefault = true
+
+[[rules]]
+description = "Flask Secret Key"
+id = "flask-secret-key"
+regex = '''secret_key\s*=\s*['"](.*?)['"]'''
+tags = ["flask", "secret"]
+
+[[rules]]
+description = "Database Connection String"
+id = "database-connection"
+regex = '''(mysql|postgresql|mongodb):\/\/[^:]+:[^@]+@[^\/]+\/[^\s'"]+'''
+tags = ["database", "connection"]
+
+[[rules]]
+description = "API Keys"
+id = "api-key"
+regex = '''(?i)(api[_-]?key|apikey)\s*[:=]\s*['"][^'"]+['"]'''
+tags = ["api", "key"]
+
+[[rules]]
+description = "Private Keys"
+id = "private-key"
+regex = '''-----BEGIN [A-Z ]+PRIVATE KEY-----'''
+tags = ["private", "key"]
+
+[[rules]]
+description = "Passwords in Code"
+id = "hardcoded-password"
+regex = '''(?i)(password|passwd|pwd)\s*[:=]\s*['"][^'"]{8,}['"]'''
+tags = ["password", "hardcoded"]
+
+[allowlist]
+description = "Allowlist for demo purposes"
+regexes = [
+    '''admin123''',  # Демонстрационный пароль
+    '''super_secret_key_123'''  # Демонстрационный секретный ключ
+]
+
+paths = [
+    '''.*_test\.py''',
+    '''.*test_.*\.py''',
+    '''.*/tests/.*''',
+    '''README\.md''',
+    '''.*\.md'''
+] 
