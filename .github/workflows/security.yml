@@ -30,28 +30,28 @@ jobs:
         
     - name: Install dependencies
       run: |
-        cd ВяткинСЮ/web
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install flake8 pylint
+        find . -name "requirements.txt" -path "*/web/*" -exec dirname {} \; | head -1 | xargs -I {} sh -c 'cd "{}" && python -m pip install --upgrade pip && pip install -r requirements.txt && pip install flake8 pylint'
         
     - name: Run Bandit Security Scan
       run: |
-        cd ВяткинСЮ/web
+        WEBDIR=$(find . -name "web" -type d | head -1)
+        cd "$WEBDIR"
         bandit -r . -f json -o bandit-report.json || true
         bandit -r . -f txt
       continue-on-error: true
       
     - name: Run Safety Check
       run: |
-        cd ВяткинСЮ/web
+        WEBDIR=$(find . -name "web" -type d | head -1)
+        cd "$WEBDIR"
         safety check --json > safety-report.json 2>/dev/null || true
         safety check
       continue-on-error: true
       
     - name: Python Security Check with pip-audit
       run: |
-        cd ВяткинСЮ/web
+        WEBDIR=$(find . -name "web" -type d | head -1)
+        cd "$WEBDIR"
         pip install pip-audit
         pip-audit --format=json --output=pip-audit-report.json . || true
       continue-on-error: true
@@ -62,9 +62,9 @@ jobs:
       with:
         name: security-reports-${{ github.run_number }}
         path: |
-          ВяткинСЮ/web/bandit-report.json
-          ВяткинСЮ/web/safety-report.json
-          ВяткинСЮ/web/pip-audit-report.json
+          **/web/bandit-report.json
+          **/web/safety-report.json
+          **/web/pip-audit-report.json
         retention-days: 30
           
   docker-security:
@@ -80,7 +80,8 @@ jobs:
       
     - name: Build Docker image
       run: |
-        cd ВяткинСЮ/web
+        WEBDIR=$(find . -name "web" -type d | head -1)
+        cd "$WEBDIR"
         docker build -t security-demo:${{ github.sha }} .
         
     - name: Run Trivy vulnerability scanner
@@ -122,14 +123,18 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Run OWASP Dependency Check
-      uses: dependency-check/Dependency-Check_Action@main
-      with:
-        project: 'Security Demo'
-        path: 'ВяткинСЮ/web'
-        format: 'ALL'
-        args: >
-          --enableRetired
-          --enableExperimental
+      run: |
+        WEBDIR=$(find . -name "web" -type d | head -1)
+        docker run --rm \
+          -v "$(pwd)/$WEBDIR":/src \
+          -v "$(pwd)/reports":/reports \
+          owasp/dependency-check:latest \
+          --scan /src \
+          --format ALL \
+          --project "Security Demo" \
+          --out /reports \
+          --enableRetired \
+          --enableExperimental || true
       continue-on-error: true
         
     - name: Upload OWASP Dependency Check results
@@ -160,13 +165,15 @@ jobs:
         
     - name: Lint with flake8
       run: |
-        cd ВяткинСЮ/web
+        WEBDIR=$(find . -name "web" -type d | head -1)
+        cd "$WEBDIR"
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
         
     - name: Analyze with pylint
       run: |
-        cd ВяткинСЮ/web
+        WEBDIR=$(find . -name "web" -type d | head -1)
+        cd "$WEBDIR"
         pylint --exit-zero --output-format=json app.py > pylint-report.json
         pylint app.py
       continue-on-error: true
@@ -177,7 +184,7 @@ jobs:
       with:
         name: code-quality-reports-${{ github.run_number }}
         path: |
-          ВяткинСЮ/web/pylint-report.json
+          **/web/pylint-report.json
         retention-days: 30
           
   security-summary:

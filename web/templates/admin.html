@@ -1,56 +1,130 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель - Простое веб-приложение</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .nav { text-align: center; margin: 20px 0; }
+        .nav a { 
+            margin: 0 15px; 
+            color: #007bff; 
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav a:hover { text-decoration: underline; }
+        .admin-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+        }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #c82333; }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .warning {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Админ панель</h1>
+        
+        <div class="nav">
+            <a href="/">Главная</a>
+            <a href="/messages">Сообщения</a>
+            <a href="/search">Поиск</a>
+            <a href="/admin">Админ</a>
+        </div>
 
-{% block title %}Admin Panel - Security Demo{% endblock %}
+        <div class="warning">
+            <strong>⚠️ Внимание!</strong> Это образовательная админ панель с намеренными уязвимостями безопасности.
+        </div>
 
-{% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h3>Панель администратора</h3>
-            </div>
-            <div class="card-body">
-                <h5>Выполнение системных команд</h5>
-                <form method="GET">
-                    <div class="mb-3">
-                        <label for="cmd" class="form-label">Команда</label>
-                        <input type="text" class="form-control" id="cmd" name="cmd" 
-                               placeholder="Например: ls -la или dir" value="{{ request.args.get('cmd', '') }}">
-                    </div>
-                    <button type="submit" class="btn btn-danger">Выполнить</button>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Назад</a>
-                </form>
-                
-                <hr>
-                <h6>Примеры команд:</h6>
-                <ul class="small">
-                    <li><code>whoami</code> - текущий пользователь</li>
-                    <li><code>pwd</code> - текущая директория</li>
-                    <li><code>ls -la</code> - список файлов (Linux/Mac)</li>
-                    <li><code>dir</code> - список файлов (Windows)</li>
-                    <li><code>ps aux</code> - список процессов (Linux/Mac)</li>
-                </ul>
-            </div>
+        <div class="admin-section">
+            <h3>🌐 Пинг сервера</h3>
+            <p>Проверка доступности хоста через ping команду</p>
+            
+            <form action="/admin/ping" method="POST">
+                <div class="form-group">
+                    <label for="host">Хост для пинга:</label>
+                    <input type="text" id="host" name="host" value="localhost" placeholder="Введите IP или домен">
+                </div>
+                <button type="submit">Выполнить ping</button>
+            </form>
+
+            {% if ping_result %}
+                <div class="result">{{ ping_result }}</div>
+            {% endif %}
+        </div>
+
+        <div class="admin-section">
+            <h3>📊 Информация о системе</h3>
+            <ul>
+                <li><strong>Приложение:</strong> Простое Flask веб-приложение</li>
+                <li><strong>Версия Python:</strong> 3.x</li>
+                <li><strong>База данных:</strong> SQLite (simple.db)</li>
+                <li><strong>Статус:</strong> <a href="/health">Проверить здоровье</a></li>
+            </ul>
+        </div>
+
+        <div class="admin-section">
+            <h3>🔒 Уязвимости (для обучения)</h3>
+            <ul>
+                <li><strong>Command Injection</strong> - в функции ping</li>
+                <li><strong>SQL Injection</strong> - в формах добавления и поиска</li>
+                <li><strong>Debug Mode</strong> - включен в продакшене</li>
+                <li><strong>Weak Secret Key</strong> - простой секретный ключ</li>
+            </ul>
         </div>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">🚨 Критическая уязвимость</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Command Injection</strong></p>
-                <p class="small">Отсутствует проверка прав доступа и валидация входных данных. Любой авторизованный пользователь может выполнять системные команды.</p>
-                <p class="small text-muted"><strong>CWE-78:</strong> OS Command Injection</p>
-                <p class="small text-muted"><strong>CWE-732:</strong> Incorrect Permission Assignment</p>
-                
-                <hr>
-                <h6 class="small">Тест на инъекцию:</h6>
-                <p class="small"><code>ls; cat /etc/passwd</code></p>
-                <p class="small"><code>whoami && id</code></p>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %} 
+</body>
+</html> 
